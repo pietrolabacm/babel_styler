@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/babel_styler" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
