@@ -28,6 +28,7 @@ from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.utils import iface
 from qgis.core import QgsProject
+from qgis.PyQt.QtWidgets import QMessageBox
 
 from .bridgestyle.bridgestyle.qgis.togeostyler import convert as qgisToGeostyler
 from .bridgestyle.bridgestyle.sld.fromgeostyler import convert as geostylerToSld
@@ -55,6 +56,8 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.active_layer = None
         self.onLayerChange()
 
+        self.saveButton.clicked.connect(self.saveCurrentType)
+
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
@@ -74,11 +77,50 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def onLayerChange(self):
         self.active_layer = iface.activeLayer()
         if self.active_layer:
-            self.convertSld()
+            self.convertStyles()
         else:
             self.widgetSld.setPlainText('')
+            self.widgetGeostyler.setPlainText('')
 
-    def convertSld(self):
-        geostyler, _,_,_ = qgisToGeostyler(self.active_layer)
-        sld, warn, = geostylerToSld(geostyler)
-        self.widgetSld.setPlainText(sld)
+    def convertStyles(self):
+        txtGeostyler, _,_,warn = qgisToGeostyler(self.active_layer)
+        self.txtGeostyler = str(txtGeostyler)
+        self.txtWarnings = '\n'.join(warn)
+        self.widgetGeostyler.setPlainText(str(txtGeostyler))
+        txtSld, warn, = geostylerToSld(txtGeostyler)
+        self.txtSld = txtSld
+        self.txtWarnings = '\n'.join(warn)
+        self.widgetSld.setPlainText(txtSld)
+
+        self.widgetWarnings.setPlainText(self.txtWarnings)
+
+    def saveCurrentType(self):
+        tabsDict = {0:self.txtSld,
+                    1:self.txtGeostyler,
+                    2:self.txtWarnings}
+        
+        fileText = tabsDict[self.tabWidget.currentIndex()]
+        savePath = self.fileWidget.filePath()
+
+        #Handling invalid path inputs
+        if not savePath:
+            self.qgisMessage("Please specify a path to save", QMessageBox.Warning)
+            return False
+        if not os.path.exists(os.path.dirname(savePath)):
+            self.qgisMessage("Invalid path provided", QMessageBox.Warning)
+            return False
+
+        try:
+            with open(savePath,'w') as file:
+                file.write(fileText)
+            self.qgisMessage("File Saved Successfully",QMessageBox.NoIcon)
+            return True
+        except Exception as e:
+            print("Error while saving the file:\n%s" % e, QMessageBox.Critical)
+            return False
+    
+    def qgisMessage(self,message:str,icon):
+        qgisInfoMessage = QMessageBox()
+        qgisInfoMessage.setText(message)
+        qgisInfoMessage.setIcon(icon)
+        qgisInfoMessage.exec_()
