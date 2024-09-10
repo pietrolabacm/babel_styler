@@ -24,8 +24,13 @@
 
 import os
 
-from qgis.PyQt import QtGui, QtWidgets, uic
+from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.utils import iface
+from qgis.core import QgsProject
+
+from .bridgestyle.bridgestyle.qgis.togeostyler import convert as qgisToGeostyler
+from .bridgestyle.bridgestyle.sld.fromgeostyler import convert as geostylerToSld
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'styleviewerwidget.ui'))
@@ -45,6 +50,35 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        iface.currentLayerChanged.connect(self.onLayerChange)
+        QgsProject.instance().layerWasAdded.connect(self.onLayerAdd)
+        self.active_layer = None
+        self.onLayerChange()
+
+
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
+
+    def setupLayerStyleConnection(self):
+        print(QgsProject.instance().mapLayers().values())
+        for layer in QgsProject.instance().mapLayers().values():
+            layer.styleChanged.connect(self.onLayerChange)
+
+    def onLayerAdd(self,layer):
+        layer.styleChanged.connect(self.stylechangdebug)
+
+    def stylechangdebug(self):
+        self.onLayerChange()
+
+    def onLayerChange(self):
+        self.active_layer = iface.activeLayer()
+        if self.active_layer:
+            self.convertSld()
+        else:
+            self.widgetSld.setPlainText('')
+
+    def convertSld(self):
+        geostyler, _,_,_ = qgisToGeostyler(self.active_layer)
+        sld, warn, = geostylerToSld(geostyler)
+        self.widgetSld.setPlainText(sld)
