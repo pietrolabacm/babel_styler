@@ -101,7 +101,7 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         #TODO test the warnings
         self.strWarnings = '\n'.join(warn)
         self.txtGeostyler.setText(self.strGeostyler)
-        strSld, warn, = geostylerToSld(dictGeostyler)
+        strSld, warn, = geostylerToSld(dictGeostyler,options=['lowercase'])
         self.strSld = strSld
         self.strWarnings = '\n'.join(warn)
         self.txtSld.setText(strSld)
