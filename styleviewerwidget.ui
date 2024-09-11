@@ -65,17 +65,7 @@
          <number>9</number>
         </property>
         <item>
-         <widget class="QTextEdit" name="widgetSld">
-          <property name="lineWrapMode">
-           <enum>QTextEdit::NoWrap</enum>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-          <property name="placeholderText">
-           <string/>
-          </property>
-         </widget>
+         <widget class="QWidget" name="widgetSld" native="true"/>
         </item>
        </layout>
       </widget>
@@ -97,11 +87,7 @@
          <number>9</number>
         </property>
         <item>
-         <widget class="QTextEdit" name="widgetGeostyler">
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
+         <widget class="QWidget" name="widgetGeostyler" native="true"/>
         </item>
        </layout>
       </widget>

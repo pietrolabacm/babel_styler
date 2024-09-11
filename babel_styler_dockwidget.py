@@ -23,12 +23,15 @@
 """
 
 import os
+import json
 
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.utils import iface
 from qgis.core import QgsProject
-from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.PyQt.QtWidgets import QMessageBox, QVBoxLayout
+from qgis.PyQt.Qsci import QsciScintilla, QsciLexerXML, QsciLexerJSON
+from qgis.PyQt.QtGui import QFont, QColor, QFontMetrics
 
 from .bridgestyle.bridgestyle.qgis.togeostyler import convert as qgisToGeostyler
 from .bridgestyle.bridgestyle.sld.fromgeostyler import convert as geostylerToSld
@@ -50,6 +53,16 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # http://doc.qt.io/qt-5/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+
+        self.txtSld = EditorWidget(QsciLexerXML())
+        layout = QVBoxLayout()
+        layout.addWidget(self.txtSld)
+        self.widgetSld.setLayout(layout)
+
+        self.txtGeostyler = EditorWidget(QsciLexerJSON())
+        layout = QVBoxLayout()
+        layout.addWidget(self.txtGeostyler)
+        self.widgetGeostyler.setLayout(layout)
 
         iface.currentLayerChanged.connect(self.onLayerChange)
         QgsProject.instance().layerWasAdded.connect(self.onLayerAdd)
@@ -79,27 +92,28 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if self.active_layer:
             self.convertStyles()
         else:
-            self.widgetSld.setPlainText('')
-            self.widgetGeostyler.setPlainText('')
+            self.txtSld.setText('')
+            self.txtGeostyler.setText('')
 
     def convertStyles(self):
-        txtGeostyler, _,_,warn = qgisToGeostyler(self.active_layer)
-        self.txtGeostyler = str(txtGeostyler)
-        self.txtWarnings = '\n'.join(warn)
-        self.widgetGeostyler.setPlainText(str(txtGeostyler))
-        txtSld, warn, = geostylerToSld(txtGeostyler)
-        self.txtSld = txtSld
-        self.txtWarnings = '\n'.join(warn)
-        self.widgetSld.setPlainText(txtSld)
+        dictGeostyler, _,_,warn = qgisToGeostyler(self.active_layer)
+        self.strGeostyler = json.dumps(dictGeostyler, indent=4)
+        #TODO test the warnings
+        self.strWarnings = '\n'.join(warn)
+        self.txtGeostyler.setText(self.strGeostyler)
+        strSld, warn, = geostylerToSld(dictGeostyler)
+        self.strSld = strSld
+        self.strWarnings = '\n'.join(warn)
+        self.txtSld.setText(strSld)
 
-        self.widgetWarnings.setPlainText(self.txtWarnings)
+        self.widgetWarnings.setPlainText(self.strWarnings)
 
     def saveCurrentType(self):
-        tabsDict = {0:self.txtSld,
-                    1:self.txtGeostyler,
-                    2:self.txtWarnings}
+        tabsDict = {0:self.strSld,
+                    1:self.strGeostyler,
+                    2:self.strWarnings}
         
-        fileText = tabsDict[self.tabWidget.currentIndex()]
+        fileText = tabsDict[self.tabWidget.currentIndex()].text()
         savePath = self.fileWidget.filePath()
 
         #Handling invalid path inputs
@@ -124,3 +138,34 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         qgisInfoMessage.setText(message)
         qgisInfoMessage.setIcon(icon)
         qgisInfoMessage.exec_()
+
+class EditorWidget(QsciScintilla):
+    ARROW_MARKER_NUM = 8
+
+    def __init__(self, lexer=None):
+        super(EditorWidget, self).__init__()
+
+        font = QFont()
+        font.setFamily('Courier')
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+        self.setFont(font)
+        self.setMarginsFont(font)
+        
+        fontmetrics = QFontMetrics(font)
+        self.setMarginsFont(font)
+        self.setMarginWidth(0, fontmetrics.width("00000") + 6)
+        self.setMarginLineNumbers(0, True)
+        self.setMarginsBackgroundColor(QColor("#cccccc"))
+
+        self.setBraceMatching(QsciScintilla.SloppyBraceMatch)
+
+        self.setCaretLineVisible(True)
+        self.setCaretLineBackgroundColor(QColor("#ffe4e4"))
+
+        if lexer is not None:
+            lexer.setDefaultFont(font)        
+            self.setLexer(lexer)
+
+        self.setReadOnly(True)
+        self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier'.encode())
