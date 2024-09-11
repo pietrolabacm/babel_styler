@@ -79,13 +79,11 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def setupLayerStyleConnection(self):
         print(QgsProject.instance().mapLayers().values())
         for layer in QgsProject.instance().mapLayers().values():
-            layer.styleChanged.connect(self.onLayerChange)
+            self.onLayerAdd(layer)
 
     def onLayerAdd(self,layer):
-        layer.styleChanged.connect(self.stylechangdebug)
-
-    def stylechangdebug(self):
-        self.onLayerChange()
+        layer.styleChanged.connect(self.onLayerChange)
+        layer.layerModified.connect(self.onLayerChange)
 
     def onLayerChange(self):
         self.active_layer = iface.activeLayer()
