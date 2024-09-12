@@ -111,7 +111,7 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                     1:self.strGeostyler,
                     2:self.strWarnings}
         
-        fileText = tabsDict[self.tabWidget.currentIndex()].text()
+        fileText = tabsDict[self.tabWidget.currentIndex()]
         savePath = self.fileWidget.filePath()
 
         #Handling invalid path inputs
