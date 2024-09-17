@@ -10,8 +10,8 @@ version=0.1
 author=Pietro Laba
 email=pietrolabacm@gmail.com
 
-about=This plugin translates QGIS styles to the Styled Layer Descriptor (SLD) format, compatible to GeoServer.
-
+about=Babel Styler translates QGIS styles to the Styled Layer Descriptor (SLD) format, compatible to GeoServer.
+    
 tracker=https://github.com/pietrolabacm/babel_styler/issues
 repository=https://github.com/pietrolabacm/babel_styler
 # End of mandatory metadata
