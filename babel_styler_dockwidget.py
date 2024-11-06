@@ -128,7 +128,7 @@ class BabelStylerDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.qgisMessage("File Saved Successfully",QMessageBox.NoIcon)
             return True
         except Exception as e:
-            print("Error while saving the file:\n%s" % e, QMessageBox.Critical)
+            self.qgisMessage("Error while saving the file:\n%s" % e, QMessageBox.Critical)
             return False
     
     def qgisMessage(self,message:str,icon):
